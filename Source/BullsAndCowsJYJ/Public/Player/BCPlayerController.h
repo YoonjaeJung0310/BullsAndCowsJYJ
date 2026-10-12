@@ -41,7 +41,8 @@ public:
 
 	//Client RPC: 서버에서 부르면 이 PC의 주인 클라이언트에서 _Implementation이 실행됨 (서버 → 특정 클라이언트 한 명)
 	UFUNCTION(Client, Reliable)
-	void ClientRPCPrintChatMessageString(const FString& InChatMessageString);
+	//판정일 때만 숫자·결과도 같이 보냄. 기존 RPC를 재사용해 별도 효과음 RPC나 서버 상태 변수를 추가하지 않음
+	void ClientRPCPrintChatMessageString(const FString& InChatMessageString, const FString& InGuessNumberString = FString(), const FString& InGuessResultString = FString());
 
 	//Server RPC: 주인 클라이언트에서 부르면 서버에서 _Implementation이 실행됨 (클라이언트 → 서버)
 	//복제는 서버 → 클라이언트 한 방향뿐이라 클라이언트가 서버에 무언가를 알릴 때는 이렇게 RPC를 씀
@@ -51,13 +52,20 @@ public:
 
 	//공지 문구. Replicated: 서버에서 바꾸면 이 PC의 주인 클라이언트로 복제됨
 	//BlueprintReadOnly: 블루프린트에서 읽기만 할 수 있게 공개함 → 공지 위젯의 바인딩 함수가 이 값을 읽음
-	UPROPERTY(Replicated, BlueprintReadOnly)
+	UPROPERTY(ReplicatedUsing=OnRep_NotificationText, BlueprintReadOnly)
 	FText NotificationText;
+
+	//서버의 공지 대입을 한 곳에서 처리함. 리슨 서버의 로컬 PC는 OnRep가 자동 호출되지 않아 여기서 같이 처리함
+	void SetNotificationText(const FText& InNotificationText);
 
 	//NotificationText를 복제 목록에 등록함
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
+	//공지가 복제되어 도착하면 내 승리·상대 승리·무승부에 맞는 소리를 한 번 재생함
+	UFUNCTION()
+	void OnRep_NotificationText();
+
 	//만들 채팅 위젯의 클래스(WBP)
 	//EditDefaultsOnly: 블루프린트 클래스 기본값(Class Defaults)에서만 고를 수 있음. 월드에 놓인 개별 인스턴스에서는 못 바꿈
 	//TSubclassOf<UBCChatInput>: UBCChatInput과 그 자식 클래스만 고를 수 있게 제한함

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Styling/SlateColor.h"
 #include "BCScoreBoard.generated.h"
 
 class UTextBlock;
@@ -26,7 +27,15 @@ public:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> TextBlock_GuessResult;
 
+	//기존 채팅 Client RPC에 같이 실려 온 판정 사건으로 효과음·강조 연출을 시작함. 같은 숫자를 연속 입력해도 매번 실행됨
+	void ShowGuessFeedback(const FString& InGuessResultString);
+
 protected:
+	virtual void NativeConstruct() override;
+	//0.6초 연출의 경과 시간만 기억함. 판정 숫자와 결과는 기존 GameState 값을 계속 사용함
+	float FeedbackElapsedTime = 0.6f;
+	FSlateColor DefaultResultColor;
+
 	//매 프레임 GameState의 LastGuessNumberString, LastGuessResultString을 읽어 글자를 바꿈 (UBCTurnTimer와 같은 방식)
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 };

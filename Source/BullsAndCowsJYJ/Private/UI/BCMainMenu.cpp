@@ -2,6 +2,7 @@
 
 
 #include "UI/BCMainMenu.h"
+#include "Audio/BCAudioSubsystem.h"
 
 #include "Components/Button.h"
 #include "Components/EditableTextBox.h"
@@ -46,6 +47,8 @@ void UBCMainMenu::NativeConstruct()
 
 void UBCMainMenu::OnStartButtonClicked()
 {
+	//메뉴 버튼은 같은 짧은 클릭음을 재사용함. 잘못된 이름으로 접속이 막혀도 버튼을 누른 소리는 들림
+	UBCAudioSubsystem::PlayEffect(this, TEXT("S_Click"));
 	//TrimStartAndEnd: 앞뒤 공백을 뺀 새 문자열
 	FString PlayerNameString = EditableTextBox_PlayerName->GetText().ToString().TrimStartAndEnd();
 	if (PlayerNameString.IsEmpty() == true || PlayerNameString.Len() > ABCPlayerState::MaxPlayerNameLength)
@@ -76,6 +79,7 @@ void UBCMainMenu::OnStartButtonClicked()
 
 void UBCMainMenu::OnHelpButtonClicked()
 {
+	UBCAudioSubsystem::PlayEffect(this, TEXT("S_Click"));
 	//IsVisible(): 지금 보이는 상태인가? → 보이면 숨기고, 숨겨져 있으면 보임 (같은 버튼으로 열고 닫기)
 	//SelfHitTestInvisible: 판 자체는 클릭을 받지 않는다 → 설명 판이 버튼 위를 덮어도 아래 버튼을 다시 눌러 닫을 수 있음
 	Panel_Help->SetVisibility(Panel_Help->IsVisible() == true ? ESlateVisibility::Collapsed : ESlateVisibility::SelfHitTestInvisible);
@@ -83,6 +87,7 @@ void UBCMainMenu::OnHelpButtonClicked()
 
 void UBCMainMenu::OnQuitButtonClicked()
 {
+	UBCAudioSubsystem::PlayEffect(this, TEXT("S_Click"));
 	//QuitGame(월드 기준 객체, 끌 플레이어, 종료 방식, 플랫폼 제한 무시 여부)
 	UKismetSystemLibrary::QuitGame(this, GetOwningPlayer(), EQuitPreference::Quit, false);
 }

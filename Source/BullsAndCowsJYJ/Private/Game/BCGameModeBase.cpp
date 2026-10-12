@@ -43,7 +43,7 @@ void ABCGameModeBase::OnPostLogin(AController* NewPlayer)
 	if (IsValid(BCPlayerController) == true)
 	{
 		//NotificationText는 Replicated 변수라 서버에서 값을 넣으면 이 플레이어의 클라이언트로 복제되어 공지 위젯에 뜬다
-		BCPlayerController->NotificationText = FText::FromString(TEXT("Connected to the game server."));
+		BCPlayerController->SetNotificationText(FText::FromString(TEXT("Connected to the game server.")));
 		//접속 공지는 ConnectedNotificationTime초만 보여 주고 지움 (그냥 두면 첫 판이 끝날 때까지 공지 위젯에 남아 있었다)
 		//마지막 인자 false = 한 번만 실행. 같은 핸들이라 누가 또 들어오면 이전 예약은 지워지고 다시 3초를 센다
 		GetWorldTimerManager().SetTimer(ConnectedNotificationTimerHandle, this, &ThisClass::ClearConnectedNotification, ConnectedNotificationTime, false);
@@ -380,7 +380,7 @@ void ABCGameModeBase::PrintChatMessageString(ABCPlayerController* InChattingPlay
 	bHasGuessedThisTurn = true;
 
 	//횟수를 올린 "뒤에" 이름을 붙여야 이번 입력까지 센 횟수가 보임 (예: Player1(1/3): 123 -> 0S1B)
-	BroadcastChatMessageString(BCPS->GetPlayerInfoString() + TEXT(": ") + InChatMessageString + TEXT(" -> ") + JudgeResultString);
+	BroadcastChatMessageString(BCPS->GetPlayerInfoString() + TEXT(": ") + InChatMessageString + TEXT(" -> ") + JudgeResultString, InChatMessageString, JudgeResultString);
 
 	//"OUT"은 첫 글자가 숫자가 아니라 Atoi가 0을 돌려줌 → 스트라이크 0개로 처리됨
 	//Left(1): 앞에서 1글자만 잘라낸 FString ("2S1B" → "2"). Atoi: 숫자 문자열을 정수로 바꿈 ("2" → 2)
@@ -432,7 +432,7 @@ void ABCGameModeBase::ResetGame()
 		}
 
 		//결과 공지는 ResetGameDelay초 동안 보여 줬으니 지움
-		BCPlayerController->NotificationText = FText::GetEmpty();
+		BCPlayerController->SetNotificationText(FText::GetEmpty());
 	}
 
 	//가운데 전광판도 새 판이니 비움
@@ -515,7 +515,7 @@ bool ABCGameModeBase::JudgeGame(ABCPlayerController* InChattingPlayerController,
 }
 
 //서버에는 접속한 모든 플레이어의 PC가 있음 → PC마다 Client RPC를 보내면 각자의 화면에 한 줄씩 뜬다
-void ABCGameModeBase::BroadcastChatMessageString(const FString& InChatMessageString)
+void ABCGameModeBase::BroadcastChatMessageString(const FString& InChatMessageString, const FString& InGuessNumberString, const FString& InGuessResultString)
 {
 	//TActorIterator<T>: 월드에 있는 T 타입 액터를 하나씩 돎. It이 유효한 동안 반복하고, ++It으로 다음 액터로 넘어감
 	//AllPlayerControllers 배열이 아니라 지금 월드에 실제로 있는 PC를 찾아서 돎
@@ -525,7 +525,7 @@ void ABCGameModeBase::BroadcastChatMessageString(const FString& InChatMessageStr
 		ABCPlayerController* BCPlayerController = *It;
 		if (IsValid(BCPlayerController) == true)
 		{
-			BCPlayerController->ClientRPCPrintChatMessageString(InChatMessageString);
+			BCPlayerController->ClientRPCPrintChatMessageString(InChatMessageString, InGuessNumberString, InGuessResultString);
 		}
 	}
 }
@@ -537,7 +537,7 @@ void ABCGameModeBase::BroadcastNotificationText(const FText& InNotificationText)
 	{
 		if (IsValid(BCPlayerController) == true)
 		{
-			BCPlayerController->NotificationText = InNotificationText;
+			BCPlayerController->SetNotificationText(InNotificationText);
 		}
 	}
 }

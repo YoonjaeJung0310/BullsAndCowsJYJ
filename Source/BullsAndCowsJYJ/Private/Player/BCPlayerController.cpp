@@ -9,6 +9,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Game/BCGameModeBase.h"
 #include "Net/UnrealNetwork.h"
+#include "Audio/BCAudioSubsystem.h"
+#include "Player/BCPlayerState.h"
 
 
 ABCPlayerController::ABCPlayerController()
@@ -20,6 +22,7 @@ ABCPlayerController::ABCPlayerController()
 
 void ABCPlayerController::ReturnToMainMenu()
 {
+	UBCAudioSubsystem::PlayEffect(this, TEXT("S_Click"));
 	//서버에 있는 다른 플레이어의 PC에서 잘못 호출되어도 이동을 시작하지 않도록 로컬 PC만 처리함
 	if (IsLocalController() == false)
 	{
@@ -128,7 +131,45 @@ void ABCPlayerController::ServerRPCPrintChatMessageString_Implementation(const F
 }
 
 //클라이언트(이 PC의 주인)에서 실행됨. 서버가 보낸 문자열을 내 화면에 출력함
-void ABCPlayerController::ClientRPCPrintChatMessageString_Implementation(const FString& InChatMessageString)
+void ABCPlayerController::ClientRPCPrintChatMessageString_Implementation(const FString& InChatMessageString, const FString& InGuessNumberString, const FString& InGuessResultString)
 {
 	PrintChatMessageString(InChatMessageString);
+	//일반 채팅에는 숫자·판정 인자가 없으므로 연출하지 않음. 사용자가 채팅에 OUT을 썼다고 효과음이 나오는 것도 막음
+	if (InGuessNumberString.IsEmpty() == false && IsValid(ScoreBoardWidgetInstance))
+	{
+		ScoreBoardWidgetInstance->ShowGuessFeedback(InGuessResultString);
+	}
+}
+
+void ABCPlayerController::SetNotificationText(const FText& InNotificationText)
+{
+	if (NotificationText.EqualTo(InNotificationText))
+	{
+		return;
+	}
+	NotificationText = InNotificationText;
+	if (IsLocalController())
+	{
+		//리슨 서버 호스트도 자기 화면에서는 같은 결과 효과음을 들을 수 있게 처리함
+		OnRep_NotificationText();
+	}
+}
+
+void ABCPlayerController::OnRep_NotificationText()
+{
+	if (IsLocalController() == false)
+	{
+		return;
+	}
+	const FString Result = NotificationText.ToString();
+	if (Result.Contains(TEXT("무승부")))
+	{
+		UBCAudioSubsystem::PlayEffect(this, TEXT("S_Draw"));
+	}
+	else if (Result.EndsWith(TEXT(" 승리!")))
+	{
+		const ABCPlayerState* BCPS = GetPlayerState<ABCPlayerState>();
+		const bool bWon = IsValid(BCPS) && Result == BCPS->PlayerNameString + TEXT(" 승리!");
+		UBCAudioSubsystem::PlayEffect(this, bWon ? TEXT("S_Win") : TEXT("S_Lose"));
+	}
 }

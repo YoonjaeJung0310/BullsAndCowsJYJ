@@ -66,7 +66,8 @@ public:
 
 protected:
 	//월드의 PC를 돌면서 각 플레이어에게 같은 채팅 한 줄을 보내 줌
-	void BroadcastChatMessageString(const FString& InChatMessageString);
+	//판정 메시지에만 숫자·결과를 덧붙여 기존 Client RPC가 연출 사건도 전달하게 함
+	void BroadcastChatMessageString(const FString& InChatMessageString, const FString& InGuessNumberString = FString(), const FString& InGuessResultString = FString());
 
 	//모든 플레이어의 공지 위젯 문구(NotificationText)를 같은 값으로 바꿈. EndGame(결과 공지)과 ClearConnectedNotification(지우기)이 같이 씀
 	void BroadcastNotificationText(const FText& InNotificationText);
